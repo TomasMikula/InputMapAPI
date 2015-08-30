@@ -1,0 +1,37 @@
+body {
+    font-family: sans-serif;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 2px;
+}
+
+kbd {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: sans-serif;
+    font-size: 11px;
+    padding: .1em .6em;
+    margin: 0 .1em;
+    color: #333;
+}
+
+pre.prettyprint {
+    border: none;
+    background-color: #eee;
+    padding: 0 1em;
+    display: table;
+}
+
+.note {
+    color: #666;
+}
+
+table {
+    margin-top: 1em;
+}

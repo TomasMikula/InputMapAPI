@@ -1,0 +1,366 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="https://cdn.rawgit.com/google/code-prettify/master/src/prettify.css"/>
+  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+
+<!--  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>-->
+
+  <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+</head>
+<body>
+
+<h1>JavaFX Input Mapping API Use Cases</h1>
+
+A future version of JavaFX will get an input mapping API that should help with defining and overriding event handlers on Nodes, especially Controls. This document presents use cases for such an API and how they can be expressed using existing APIs. The goal is to collect requirements and inform the final input mapping API of JavaFX.
+
+<h2>Existing APIs</h2>
+
+<h3>OpenJFX Internal API</h3>
+Developed by Jonathan Giles (Oracle) and used internally in OpenJFX Controls.
+
+<h3>WellBehavedFX</h3>
+Developed by Tomas Mikula and used in the <a href="https://github.com/TomasMikula/RichTextFX">RichTextFX</a> control.
+<p><a href="http://www.fxmisc.org/wellbehaved/javadoc/0.2/org/fxmisc/wellbehaved/event/experimental/package-summary.html">API (Javadoc)</a></p>
+<p><a href="https://github.com/TomasMikula/WellBehavedFX/tree/master/src/main/java/org/fxmisc/wellbehaved/event/experimental">Source Code</a></p>
+
+In the code examples below, all method calls of the form
+
+<pre class="prettyprint"><code class="language-java">
+Nodes.method(node, args...);
+ </code></pre>
+
+could become
+
+<pre class="prettyprint"><code class="language-java">
+node.method(args...);
+ </code></pre>
+
+if this was to become part of JavaFX.
+
+
+<h2>Event Matching</h2>
+Use cases in this section focus on expressivity of event matching, i.e. expressing what events should be handled.
+
+<h3>Key Combinations</h3>
+The task is to add handlers for the following key combinations to <code>Node node</code>:
+
+<table>
+  <tr> <th>Key Combination</th> <th>Comment</th> <th>Action</th> </tr>
+  <tr> <td><kbd>Enter</kbd></td> <td>no modifier keys pressed</td> <td><code>enterPressed()</code></td> </tr>
+  <tr> <td><code>[<kbd>Shift</kbd>+]<kbd>A</kbd></code></td> <td>optional <kbd>Shift</kbd>, no other modifiers</td> <td><code>aPressed()</code></td> </tr>
+  <tr> <td><code><kbd>Shortcut</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></code></td> <td></td> <td><code>saveAll()</code></td> </tr>
+</table>
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+Nodes.addInputMap(node, sequence(
+    consume(keyPressed(ENTER),                        e -&gt; enterPressed()),
+    consume(keyPressed(A, SHIFT_ANY),                 e -&gt; aPressed()),
+    consume(keyPressed(S, SHORTCUT_DOWN, SHIFT_DOWN), e -&gt; saveAll())
+));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Same action for different events</h3>
+In some situations it is desirable to bind multiple different events to the same action. Task: Invoke <code>action()</code> when a <code>Button</code> is either left clicked or <kbd>Space</kbd> pressed. If these are the only two events handled by the button, one handler for each of <code>MOUSE_CLICKED</code> and <code>KEY_PRESSED</code> event types will be installed on the button (as opposed to, for example, installing a common handler for the nearest common supertype, which in this case would be <code>InputEvent.ANY</code>).
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+Nodes.addInputMap(button, consume(
+        anyOf(mouseClicked(PRIMARY), keyPressed(SPACE)),
+        e -&gt; action()));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Text Input</h3>
+Handle text input, i.e. <code>KEY_TYPED</code> events, <em>except</em> for the new line character, which should be left unconsumed. In this example, echo the input to standard output.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+Nodes.addInputMap(button, consume(
+        keyTyped(c -&gt; !c.equals("\n")),
+        e -&gt; System.out.print(e.getCharacter())));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Custom Events</h3>
+Assume the following custom event declaration:
+
+<pre class="prettyprint"><code class="language-java">
+class FooEvent extends Event {
+    public static final EventType&lt;FooEvent&gt; FOO;
+
+    public boolean isSecret();
+    public String getValue();
+}
+ </code></pre>
+
+The task is to print out the value of and consume non-secret <code>Foo</code> events of <code>node</code>. Secret <code>Foo</code> events should be left unconsumed, i.e. let to bubble up.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+Nodes.addInputMap(node, consume(
+        eventType(FooEvent.FOO).unless(FooEvent::isSecret),
+        e -&gt; System.out.print(e.getValue())));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+
+<h2>Manipulating Input Mappings</h2>
+Use cases in this section focus on manipulating input mappings of a control, such as overriding mappings, adding default mappings, intercepting mappings, removing a previously added mapping, etc.
+
+<h3>Override a previously defined mapping</h3>
+First install a handler on <code>node</code> that invokes <code>charTyped(String character)</code> for each typed character. Later override the <kbd>Tab</kbd> character with <code>tabTyped()</code>. All other characters should still be handled by <code>charTyped(character)</code>.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+Nodes.addInputMap(node, consume(keyTyped(), e -&gt; charTyped(e.getCharacter())));
+
+// later override the Tab character
+Nodes.addInputMap(node, consume(keyTyped("\t"), e -&gt; tabTyped()));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Override even a more specific previous mapping</h3>
+The <code>Control</code> might have installed a <kbd>Tab</kbd>-pressed handler <kbd>Tab</kbd> navigation, but you want to consume all letter, digit and whitespace keys (maybe because you are handling their corresponding key-typed events). The point here is that the previously installed <kbd>Tab</kbd> handler is overridden even if it is more specifice than the letter/digit/whitespace handler.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+Nodes.addInputMap(node, consume(keyPressed(TAB), e -&gt; tabNavigation()));
+
+// later consume all letters, digits and whitespace
+Nodes.addInputMap(node, consume(keyPressed(kc -&gt; kc.isLetterKey() || kc.isDigitKey() || kc.isWhitespaceKey())));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Add default mappings</h3>
+It has to be possible to add default (or fallback) mappings, i.e. mappings that do not override any previously defined mappings, but take effect if the event is not handled by any previously installed mapping. That is the case for mappings added by skins, since skin is only installed after the user has instantiated the control and customized the mappings.
+
+The task is to <em>first</em> install the (custom) <kbd>Tab</kbd> handler (<code>tabTyped()</code>) and <em>then</em> the (default) key typed handler (<code>charTyped(c)</code>), but the custom handler should not be overridden by the default handler.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+// user-specified Tab handler
+Nodes.addInputMap(node, consume(keyTyped("\t"), e -&gt; tabTyped()));
+
+// later in skin
+Nodes.addFallbackInputMap(node, consume(keyTyped(), e -&gt; charTyped(e.getCharacter())));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Ignore certain events</h3>
+Suppose the skin defines a generic key-pressed handler, but the user needs <kbd>Tab</kbd>-pressed to be ignored by the control and bubble up the scene graph.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+// ignore Tab handler
+Nodes.addInputMap(node, ignore(keyPressed(TAB)));
+
+// later in skin
+Nodes.addFallbackInputMap(node, consume(keyPressed(), e -&gt; handleKeyPressed(e)));
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+<h3>Remove a previously added handler</h3>
+When changing skins, the skin that is being disposed should remove any mappings it has added to the control. Any mappings added before or after the skin was instantiated should stay in effect. In this example, let's add handlers for each of the arrow keys and for mouse move with left button pressed. Later, remove all of them, but leaving any other mappings untouched.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+// on skin creation
+InputMap&lt;InputEvent&gt; im = sequence(
+        consume(keyPressed(UP),    e -&gt; moveUp()),
+        consume(keyPressed(DOWN),  e -&gt; moveDown()),
+        consume(keyPressed(LEFT),  e -&gt; moveLeft()),
+        consume(keyPressed(RIGHT), e -&gt; moveRight()),
+        consume(
+                mouseMoved().onlyIf(MouseEvent::isPrimaryButtonDown),
+                e -&gt; move(e.getX(), e.getY())));
+Nodes.addFallbackInputMap(node, im);
+
+// on skin disposal
+Nodes.removeInputMap(node, im);
+      </code></pre>
+    </td>
+  </tr>
+</table>
+
+
+<h2>Custom Extensions</h2>
+This section lists some potentially desirable use cases. The point here is not whether these are supported out of the box, but rather whether the API is flexible enough to implement custom support for them.
+
+<h3>Common post-consumption processing</h3>
+Suppose we have a number of input mappings whose handlers share some common at the end. We would like to factor out this common code to avoid repetition. To give an example, suppose each <code>move*()</code> method from the previous example ends with <code>this.moveCount += 1</code>. Let's factor out this common code to a single place.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      <pre class="prettyprint"><code class="language-java">
+static &lt;E extends Event&gt; InputMap&lt;E&gt; postProcess(
+        InputMap&lt;E&gt; im, Consumer&lt;? super E&gt; postConsumption) {
+    // implementation omitted for brevity,
+    // see the link below to see the code
+}
+
+InputMap&lt;InputEvent&gt; im0 = sequence(
+        consume(keyPressed(UP),    e -&gt; moveUp()),
+        consume(keyPressed(DOWN),  e -&gt; moveDown()),
+        consume(keyPressed(LEFT),  e -&gt; moveLeft()),
+        consume(keyPressed(RIGHT), e -&gt; moveRight()),
+        consume(
+                mouseMoved().onlyIf(MouseEvent::isPrimaryButtonDown),
+                e -&gt; move(e.getX(), e.getY())));
+
+InputMap&lt;InputEvent&gt; im0 = postProcess(im0, e -&gt; { this.moveCount += 1; });
+
+Nodes.addFallbackInputMap(node, im);
+      </code></pre>
+
+      The point here is that the <code>postProcess()</code> method does not have to be baked in the framework. It is implemented completely in "user-space". Here is <a href="https://github.com/TomasMikula/WellBehavedFX/blob/9d77a7475fd5847e5c1e95111428c984710c5001/src/test/java/org/fxmisc/wellbehaved/event/experimental/InputMapTest.java#L235-L258">its code</a>.
+    </td>
+  </tr>
+</table>
+
+<h3>Structural sharing between input maps</h3>
+Consider a control that defines <em>m</em> input mappings and that there are <em>n</em> instances of this control in the scene. The space complexity of all input mappings of all these controls combined is then <em>O(n*m)</em>. The goal is to reduce this complexity to <em>O(m+n)</em> by having a shared structure of complexity <em>O(m)</em> of the <em>m</em> input mappings, and each of the <em>n</em> controls to have an input map that is a constant overhead (<em>O(1)</em>) on top of this shared structure.
+
+<table>
+  <tr>
+    <th>OpenJFX Internal</th>
+    <th>WellBehavedFX</th>
+  </tr>
+  <tr>
+    <td>
+      <span class="note">Author has not entered the solution yet.</span>
+    </td>
+    <td>
+      The implementation is more involved than in the previous example, but can again be done completely in "user-space", thanks to the fact that <code>InputMap</code> is an interface. WellBehavedFX contains an implementation in package <code>org.fxmisc.wellbehaved.event.experimental.template</code>. The shared structure is an <code>InputMapTemplate</code>. The API for constructing <code>InputMapTemplate</code>s very much copies the API for constructing <code>InputMap</code>s that you have seen throughout this document, except the handlers take an additional argument&mdash;typically the control or the "behavior". A template can then be <em>instantiated</em> to an <code>InputMap</code>, which is a constant overhead wrapper around the template, by providing the control/behavior object.
+
+      <p>Example:</p>
+      <pre class="prettyprint"><code class="language-java">
+static final InputMapTemplate&lt;TextArea, InputEvent&gt; INPUT_MAP_TEMPLATE =
+    unless(TextArea::isDisabled, sequence(
+        consume(keyPressed(A, SHORTCUT_DOWN), (area, evt) -&gt; area.selectAll()),
+        consume(keyPressed(C, SHORTCUT_DOWN), (area, evt) -&gt; area.copy())
+        /* ... */
+    ));
+
+TextArea area1 = new TextArea();
+TextArea area2 = new TextArea();
+
+InputMapTemplate.installFallback(INPUT_MAP_TEMPLATE, area1);
+InputMapTemplate.installFallback(INPUT_MAP_TEMPLATE, area2);
+      </code></pre>
+
+      Notice that <code>INPUT_MAP_TEMPLATE</code> is <code>static</code> and then added to two <code>TextArea</code>s.
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
