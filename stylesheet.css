@@ -26,6 +26,9 @@ pre.prettyprint {
     background-color: #eee;
     padding: 0 1em;
     display: table;
+}
+
+td pre.prettyprint {
     margin: 0;
 }
 
