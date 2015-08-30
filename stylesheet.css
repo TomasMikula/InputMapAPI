@@ -26,6 +26,7 @@ pre.prettyprint {
     background-color: #eee;
     padding: 0 1em;
     display: table;
+    margin: 0;
 }
 
 .note {
