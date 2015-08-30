@@ -1,2 +1,3 @@
 # InputMapAPI
-Discussion about input mapping API for JavaFX
+
+[Use Cases](http://htmlpreview.github.io/?https://github.com/TomasMikula/InputMapAPI/blob/master/use-cases.html)
